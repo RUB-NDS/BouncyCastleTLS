@@ -3,23 +3,24 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>de.rub.nds.bc</groupId>
     <artifactId>BouncyCastleTLS</artifactId>
-    <version>1.0</version>
+    <version>${bc.version}-1.0</version>
     <packaging>jar</packaging>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
+        <bc.version>1.58</bc.version>
     </properties>
     <dependencies>
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk15on</artifactId>
-            <version>1.58</version>
+            <version>${bc.version}</version>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcpkix-jdk15on</artifactId>
-            <version>1.58</version>
+            <version>${bc.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
