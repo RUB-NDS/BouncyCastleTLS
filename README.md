@@ -11,5 +11,5 @@ mvn clean install -Dbc.version=1.56
 
 Start with:
 ```bash
-java -jar BouncyCastleTLS-1.56-1.0.jar /home/juraj/git/TLS-Docker-Library/certs/keys.jks password ec256 4433
+java -jar BouncyCastleTLS-1.56-1.0.jar [jks] [password] [alias] [port]
 ```
