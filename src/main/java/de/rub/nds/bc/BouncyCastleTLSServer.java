@@ -30,6 +30,7 @@ import org.bouncycastle.crypto.tls.TlsServerProtocol;
 import org.bouncycastle.crypto.tls.TlsSignerCredentials;
 import org.bouncycastle.crypto.tls.TlsUtils;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
+import org.bouncycastle.util.Arrays;
 
 /**
  * Basic Bouncy Castle TLS server. Do not use for real applications, just a demo
@@ -187,10 +188,33 @@ public class BouncyCastleTLSServer extends Thread {
 
                     @Override
                     protected int[] getCipherSuites() {
-                        for (int i : offeredCipherSuites) {
-                            System.out.println(Integer.toHexString(i));
-                        }
-                        return offeredCipherSuites;
+                        int[] defaultCiphers = super.getCipherSuites();
+                        int[] newCiphers = new int[]{
+                            CipherSuite.TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA,
+                            CipherSuite.TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA,
+                            CipherSuite.TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256,
+                            CipherSuite.TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256,
+                            CipherSuite.TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA,
+                            CipherSuite.TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384,
+                            CipherSuite.TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384,
+                            CipherSuite.TLS_ECDH_ECDSA_WITH_NULL_SHA,
+                            CipherSuite.TLS_ECDH_ECDSA_WITH_RC4_128_SHA,
+                            CipherSuite.TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA,
+                            CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,
+                            CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,
+                            CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+                            CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,
+                            CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384,
+                            CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+                            CipherSuite.TLS_ECDHE_ECDSA_WITH_NULL_SHA,
+                            CipherSuite.TLS_ECDHE_ECDSA_WITH_RC4_128_SHA,
+                            CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+                            CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,
+                            CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,};
+                        int[] ciphers = new int[defaultCiphers.length + newCiphers.length];
+                        System.arraycopy(defaultCiphers, 0, ciphers, 0, defaultCiphers.length);
+                        System.arraycopy(newCiphers, 0, ciphers, defaultCiphers.length, newCiphers.length);
+                        return ciphers;
                     }
                 });
                 ConnectionHandler ch = new ConnectionHandler(socket);
