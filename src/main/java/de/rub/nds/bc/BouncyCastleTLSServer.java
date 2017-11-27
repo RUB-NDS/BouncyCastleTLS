@@ -2,6 +2,7 @@ package de.rub.nds.bc;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.KeyPair;
@@ -17,8 +18,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.crypto.tls.Certificate;
+import org.bouncycastle.crypto.tls.CipherSuite;
+import org.bouncycastle.crypto.tls.DefaultTlsEncryptionCredentials;
 import org.bouncycastle.crypto.tls.DefaultTlsServer;
 import org.bouncycastle.crypto.tls.DefaultTlsSignerCredentials;
+import org.bouncycastle.crypto.tls.KeyExchangeAlgorithm;
+import org.bouncycastle.crypto.tls.TlsCipher;
+import org.bouncycastle.crypto.tls.TlsCredentials;
+import org.bouncycastle.crypto.tls.TlsEncryptionCredentials;
 import org.bouncycastle.crypto.tls.TlsServerProtocol;
 import org.bouncycastle.crypto.tls.TlsSignerCredentials;
 import org.bouncycastle.crypto.tls.TlsUtils;
@@ -27,7 +34,7 @@ import org.bouncycastle.crypto.util.PrivateKeyFactory;
 /**
  * Basic Bouncy Castle TLS server. Do not use for real applications, just a demo
  * server for security testing purposes.
- * 
+ *
  * Works for BC 1.50 and higher
  *
  * From:
@@ -51,52 +58,82 @@ public class BouncyCastleTLSServer extends Thread {
 
     private final int port;
 
-    private final KeyPair keyPair;
+    private KeyPair rsaKeyPair;
 
-    private final Certificate cert;
+    private Certificate rsaCert;
+
+    private KeyPair ecKeyPair;
+
+    private Certificate ecCert;
 
     private boolean shutdown;
 
-    private final ServerSocket serverSocket;
+    private ServerSocket serverSocket;
 
-    public BouncyCastleTLSServer(KeyStore keyStore, String password, String alias, int port) throws IOException, 
-            KeyStoreException, CertificateEncodingException, NoSuchAlgorithmException, UnrecoverableKeyException {
+    public BouncyCastleTLSServer(int port) {
         this.port = port;
-        cert = loadTLSCertificate(keyStore, alias);
+    }
+
+    public void addRsaKey(KeyStore keyStore, String password, String alias) throws IOException,
+            KeyStoreException, CertificateEncodingException, NoSuchAlgorithmException, UnrecoverableKeyException {
+        rsaCert = loadTLSCertificate(keyStore, alias);
+        rsaKeyPair = getKeyPair(keyStore, alias, password.toCharArray());
+    }
+
+    public void addEcKey(KeyStore keyStore, String password, String alias) throws IOException,
+            KeyStoreException, CertificateEncodingException, NoSuchAlgorithmException, UnrecoverableKeyException {
+        ecCert = loadTLSCertificate(keyStore, alias);
+        ecKeyPair = getKeyPair(keyStore, alias, password.toCharArray());
+    }
+
+    public void createServerSocket() throws IOException {
         serverSocket = new ServerSocket(port);
-        keyPair = getKeyPair(keyStore, alias, password.toCharArray());
     }
 
     public static void main(String[] args) throws Exception {
         System.setProperty("java.security.debug", "ssl");
-        String path;
-        String password;
-        String alias;
+        String rsaPath, ecPath = null;
+        String rsaPassword, ecPassword = null;
+        String rsaAlias, ecAlias = null;
         int port;
 
         switch (args.length) {
             case 4:
-                path = args[0];
-                password = args[1];
-                alias = args[2];
-                port = Integer.parseInt(args[3]);
+            case 7:
+                port = Integer.parseInt(args[0]);
+                rsaPath = args[1];
+                rsaPassword = args[2];
+                rsaAlias = args[3];
+                if (args.length == 7) {
+                    ecPath = args[4];
+                    ecPassword = args[5];
+                    ecAlias = args[6];
+                }
                 break;
             case 0:
-                path = PATH_TO_JKS;
-                password = JKS_PASSWORD;
-                alias = ALIAS;
+                rsaPath = PATH_TO_JKS;
+                rsaPassword = JKS_PASSWORD;
+                rsaAlias = ALIAS;
                 port = PORT;
                 break;
             default:
-                System.out.println("Usage (run with): java -jar [name].jar [jks-path] "
-                        + "[password] [alias] [port]");
+                System.out.println("Usage (run with): java -jar [name].jar [port] [rsa-jks-path] "
+                        + "[rsa-password] [rsa-alias] [ec-jks-path] [ec-password] [ec-alias]");
                 return;
         }
 
-        KeyStore ks = KeyStore.getInstance("JKS");
-        ks.load(new FileInputStream(path), password.toCharArray());
+        KeyStore ksRSA = KeyStore.getInstance("JKS");
+        ksRSA.load(new FileInputStream(rsaPath), rsaPassword.toCharArray());
 
-        BouncyCastleTLSServer server = new BouncyCastleTLSServer(ks, password, alias, port);
+        BouncyCastleTLSServer server = new BouncyCastleTLSServer(port);
+        server.addRsaKey(ksRSA, rsaPassword, rsaAlias);
+        if (ecAlias != null) {
+            KeyStore ksEC = KeyStore.getInstance("JKS");
+            ksEC.load(new FileInputStream(ecPath), ecPassword.toCharArray());
+            server.addEcKey(ksEC, ecPassword, ecAlias);
+        }
+        server.createServerSocket();
+
         Thread t = new Thread(server);
         t.start();
     }
@@ -113,7 +150,47 @@ public class BouncyCastleTLSServer extends Thread {
                 tlsServerProtocol.accept(new DefaultTlsServer() {
                     @Override
                     protected TlsSignerCredentials getRSASignerCredentials() throws IOException {
-                        return new DefaultTlsSignerCredentials(context, cert, PrivateKeyFactory.createKey(keyPair.getPrivate().getEncoded()));
+                        return new DefaultTlsSignerCredentials(context, rsaCert, PrivateKeyFactory.createKey(rsaKeyPair.getPrivate().getEncoded()));
+                    }
+
+                    @Override
+                    protected TlsEncryptionCredentials getRSAEncryptionCredentials() throws IOException {
+                        return new DefaultTlsEncryptionCredentials(context, rsaCert, PrivateKeyFactory.createKey(rsaKeyPair.getPrivate().getEncoded()));
+                    }
+
+                    @Override
+                    public TlsCredentials getCredentials() throws IOException {
+                        switch (selectedCipherSuite) {
+                            case CipherSuite.TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA:
+                            case CipherSuite.TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA:
+                            case CipherSuite.TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256:
+                            case CipherSuite.TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256:
+                            case CipherSuite.TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA:
+                            case CipherSuite.TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384:
+                            case CipherSuite.TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384:
+                            case CipherSuite.TLS_ECDH_ECDSA_WITH_NULL_SHA:
+                            case CipherSuite.TLS_ECDH_ECDSA_WITH_RC4_128_SHA:
+                            case CipherSuite.TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA:
+                            case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA:
+                            case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256:
+                            case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256:
+                            case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA:
+                            case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384:
+                            case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384:
+                            case CipherSuite.TLS_ECDHE_ECDSA_WITH_NULL_SHA:
+                            case CipherSuite.TLS_ECDHE_ECDSA_WITH_RC4_128_SHA:
+                                return new DefaultTlsSignerCredentials(context, ecCert, PrivateKeyFactory.createKey(ecKeyPair.getPrivate().getEncoded()));
+                            default:
+                                return super.getCredentials();
+                        }
+                    }
+
+                    @Override
+                    protected int[] getCipherSuites() {
+                        for (int i : offeredCipherSuites) {
+                            System.out.println(Integer.toHexString(i));
+                        }
+                        return offeredCipherSuites;
                     }
                 });
                 ConnectionHandler ch = new ConnectionHandler(socket);
@@ -158,7 +235,7 @@ public class BouncyCastleTLSServer extends Thread {
         return tlsCerts;
     }
 
-    public static KeyPair getKeyPair(final KeyStore keystore, final String alias, char[] password) 
+    public static KeyPair getKeyPair(final KeyStore keystore, final String alias, char[] password)
             throws KeyStoreException, NoSuchAlgorithmException, UnrecoverableKeyException {
         PrivateKey privateKey = (PrivateKey) keystore.getKey(alias, password);
         java.security.cert.Certificate cert = keystore.getCertificate(alias);
