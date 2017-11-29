@@ -8,13 +8,14 @@ import java.io.OutputStreamWriter;
 import java.net.Socket;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.bouncycastle.crypto.tls.TlsServerProtocol;
 
 
 public class ConnectionHandler implements Runnable {
 
     private final static Logger LOGGER = LogManager.getLogger(ConnectionHandler.class);
 
-    private final Socket applicationSocket;
+    private final TlsServerProtocol tlsServerProtocol;
 
     /**
      * ConnectionHandler constructor
@@ -22,8 +23,8 @@ public class ConnectionHandler implements Runnable {
      * @param socket
      *            - The socket of the connection
      */
-    public ConnectionHandler(final Socket socket) {
-	applicationSocket = socket;
+    public ConnectionHandler(final TlsServerProtocol tlsServerProtocol) {
+	this.tlsServerProtocol = tlsServerProtocol;
     }
 
     @Override
@@ -32,8 +33,8 @@ public class ConnectionHandler implements Runnable {
 	LOGGER.debug("new Thread started");
 
 	try {
-	    final BufferedReader br = new BufferedReader(new InputStreamReader(applicationSocket.getInputStream()));
-	    final BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(applicationSocket.getOutputStream()));
+	    final BufferedReader br = new BufferedReader(new InputStreamReader(tlsServerProtocol.getInputStream()));
+	    final BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(tlsServerProtocol.getOutputStream()));
 	    String line = "";
 	    while ((line = br.readLine()) != null) {
 		LOGGER.debug(line);
@@ -44,7 +45,7 @@ public class ConnectionHandler implements Runnable {
 	    LOGGER.debug(e.getLocalizedMessage(), e);
 	} finally {
 	    try {
-		applicationSocket.close();
+	    tlsServerProtocol.close();
 	    } catch (final IOException ioe) {
 		LOGGER.debug(ioe.getLocalizedMessage(), ioe);
 	    }

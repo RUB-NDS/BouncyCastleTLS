@@ -217,7 +217,7 @@ public class BouncyCastleTLSServer extends Thread {
                         return ciphers;
                     }
                 });
-                ConnectionHandler ch = new ConnectionHandler(socket);
+                ConnectionHandler ch = new ConnectionHandler(tlsServerProtocol);
                 Thread t = new Thread(ch);
                 t.start();
             } catch (IOException ex) {
