@@ -2,7 +2,6 @@ package de.rub.nds.bc;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.math.BigInteger;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.KeyPair;
@@ -10,8 +9,10 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.Provider;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.Security;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateEncodingException;
 import org.apache.logging.log4j.LogManager;
@@ -22,21 +23,23 @@ import org.bouncycastle.crypto.tls.CipherSuite;
 import org.bouncycastle.crypto.tls.DefaultTlsEncryptionCredentials;
 import org.bouncycastle.crypto.tls.DefaultTlsServer;
 import org.bouncycastle.crypto.tls.DefaultTlsSignerCredentials;
-import org.bouncycastle.crypto.tls.KeyExchangeAlgorithm;
-import org.bouncycastle.crypto.tls.TlsCipher;
 import org.bouncycastle.crypto.tls.TlsCredentials;
 import org.bouncycastle.crypto.tls.TlsEncryptionCredentials;
 import org.bouncycastle.crypto.tls.TlsServerProtocol;
 import org.bouncycastle.crypto.tls.TlsSignerCredentials;
 import org.bouncycastle.crypto.tls.TlsUtils;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
-import org.bouncycastle.util.Arrays;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 /**
  * Basic Bouncy Castle TLS server. Do not use for real applications, just a demo
  * server for security testing purposes.
  *
- * Works for BC 1.50 and higher
+ * Works for BC 1.50 and higher.
+ * 
+ * Since BC 1.57 it is also possible to use a newer TLS server version 
+ * (org.bouncycastle.tls.DefaultTlsServer). But it is not available in versions
+ * 1.50 - 1.55
  *
  * From:
  * https://stackoverflow.com/questions/18065170/how-do-i-do-tls-with-bouncycastle
@@ -92,6 +95,8 @@ public class BouncyCastleTLSServer extends Thread {
     }
 
     public static void main(String[] args) throws Exception {
+        Provider provider = new BouncyCastleProvider();
+        Security.insertProviderAt(provider, 1);
         System.setProperty("java.security.debug", "ssl");
         String rsaPath, ecPath = null;
         String rsaPassword, ecPassword = null;
@@ -234,7 +239,7 @@ public class BouncyCastleTLSServer extends Thread {
         }
         LOGGER.info("Shutdown complete");
     }
-
+    
     /**
      * Loads a certificate from a keystore
      *
