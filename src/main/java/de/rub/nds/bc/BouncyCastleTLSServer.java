@@ -48,7 +48,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * and https://github.com/RUB-NDS/TLS-Attacker
  *
  */
-public class BouncyCastleTLSServer extends Thread {
+public class BouncyCastleTLSServer {
 
     private static final Logger LOGGER = LogManager.getLogger(BouncyCastleTLSServer.class);
 
@@ -139,13 +139,10 @@ public class BouncyCastleTLSServer extends Thread {
             server.addEcKey(ksEC, ecPassword, ecAlias);
         }
         server.createServerSocket();
-
-        Thread t = new Thread(server);
-        t.start();
+        server.start();
     }
 
-    @Override
-    public void run() {
+    public void start() {
         while (!shutdown) {
             try {
                 LOGGER.info("Listening on port " + port + "...\n");
