@@ -222,7 +222,7 @@ public class BouncyCastleTLSServer {
                 ConnectionHandler ch = new ConnectionHandler(tlsServerProtocol);
                 Thread t = new Thread(ch);
                 t.start();
-            } catch (IOException ex) {
+            } catch (IOException | NullPointerException ex) {
                 LOGGER.info(ex.getLocalizedMessage(), ex);
             }
         }
