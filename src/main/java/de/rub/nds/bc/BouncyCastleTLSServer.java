@@ -212,7 +212,8 @@ public class BouncyCastleTLSServer {
                             CipherSuite.TLS_ECDHE_ECDSA_WITH_RC4_128_SHA,
                             CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
                             CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,
-                            CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,};
+                            CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+                            CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV};
                         int[] ciphers = new int[defaultCiphers.length + newCiphers.length];
                         System.arraycopy(defaultCiphers, 0, ciphers, 0, defaultCiphers.length);
                         System.arraycopy(newCiphers, 0, ciphers, defaultCiphers.length, newCiphers.length);
