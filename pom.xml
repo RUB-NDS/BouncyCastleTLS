@@ -9,7 +9,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <bc.version>1.50</bc.version>
+        <bc.version>1.67</bc.version>
     </properties>
     <dependencies>
         <dependency>
